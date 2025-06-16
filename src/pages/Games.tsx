@@ -9,10 +9,12 @@ import CasinoHeader from "@/components/CasinoHeader";
 import GameCard from "@/components/GameCard";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 const Games = () => {
   const { toast } = useToast();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user } = useAuth();
+  const [isLoggedIn, setIsLoggedIn] = useState(!!user);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
@@ -21,7 +23,7 @@ const Games = () => {
   const games = [
     {
       id: 1,
-      name: "Diamond Fortune",
+      name: "Diamond Fortune Slots",
       category: "Slots",
       image: "https://images.unsplash.com/photo-1470813740244-df37b8c1edcb?w=400&h=300&fit=crop",
       rtp: "96.5%",
@@ -76,7 +78,7 @@ const Games = () => {
   });
 
   const handlePlayGame = (gameName: string) => {
-    if (!isLoggedIn) {
+    if (!user) {
       toast({
         title: "Login Required",
         description: "Please log in to start playing games",
@@ -86,12 +88,15 @@ const Games = () => {
     }
     
     if (gameName.includes("Slots")) {
-      // Navigate to slot machine game
-      window.location.href = "/slot-machine";
-    } else {
+      // Navigate to slot machine game - this will be handled by Link component
       toast({
         title: `Starting ${gameName}`,
         description: "Good luck and have fun!"
+      });
+    } else {
+      toast({
+        title: "Coming Soon",
+        description: `${gameName} will be available in the next update!`,
       });
     }
   };
@@ -149,12 +154,12 @@ const Games = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-bold text-yellow-400 mb-2">🎰 Try Our Slot Machine!</h3>
-                <p className="text-gray-300">Experience our premium slot machine with animated reels and bonus features</p>
+                <h3 className="text-2xl font-bold text-yellow-400 mb-2">🎰 Try Our Premium Slot Machine!</h3>
+                <p className="text-gray-300">Experience our advanced slot machine with multiple themes, free spins, and progressive jackpots</p>
               </div>
               <Link to="/slot-machine">
                 <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-bold">
-                  Play Slots
+                  Play Slots Now
                 </Button>
               </Link>
             </div>
@@ -164,11 +169,21 @@ const Games = () => {
         {/* Games Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredGames.map((game) => (
-            <GameCard 
-              key={game.id} 
-              game={game} 
-              onPlay={() => handlePlayGame(game.name)}
-            />
+            <div key={game.id}>
+              {game.name.includes("Slots") ? (
+                <Link to="/slot-machine">
+                  <GameCard 
+                    game={game} 
+                    onPlay={() => handlePlayGame(game.name)}
+                  />
+                </Link>
+              ) : (
+                <GameCard 
+                  game={game} 
+                  onPlay={() => handlePlayGame(game.name)}
+                />
+              )}
+            </div>
           ))}
         </div>
 

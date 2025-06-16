@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Games from "./pages/Games";
-import SlotMachine from "./pages/SlotMachine";
+import SlotMachinePage from "./pages/SlotMachinePage";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -74,7 +74,7 @@ const App = () => (
             } />
             <Route path="/slot-machine" element={
               <ProtectedRoute>
-                <SlotMachine />
+                <SlotMachinePage />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
