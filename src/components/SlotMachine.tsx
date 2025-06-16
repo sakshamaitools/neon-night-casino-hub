@@ -4,12 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Zap, Play, Square, RotateCcw, Settings, Info } from 'lucide-react';
+import { Zap, Play, Square, RotateCcw, Settings, Info, DollarSign } from 'lucide-react';
 import { useWallet } from '@/hooks/useWallet';
 import { useToast } from '@/hooks/use-toast';
 
+// Define proper types for symbols
+interface SymbolData {
+  value: number;
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  isWild?: boolean;
+  isScatter?: boolean;
+}
+
 // Slot symbols with different rarities and values
-const SYMBOLS = {
+const SYMBOLS: Record<string, SymbolData> = {
   '🍒': { value: 2, rarity: 'common' },
   '🍋': { value: 3, rarity: 'common' },
   '🍊': { value: 4, rarity: 'common' },
@@ -101,7 +109,8 @@ const SlotMachine = () => {
       // Count consecutive matching symbols from left
       let matchCount = 1;
       for (let i = 1; i < symbols.length; i++) {
-        if (symbols[i] === firstSymbol || SYMBOLS[symbols[i] as keyof typeof SYMBOLS]?.isWild) {
+        const symbolData = SYMBOLS[symbols[i]];
+        if (symbols[i] === firstSymbol || (symbolData && symbolData.isWild)) {
           matchCount++;
         } else {
           break;
@@ -110,7 +119,7 @@ const SlotMachine = () => {
 
       // Calculate win for this line
       if (matchCount >= 3) {
-        const symbolData = SYMBOLS[firstSymbol as keyof typeof SYMBOLS];
+        const symbolData = SYMBOLS[firstSymbol];
         if (symbolData) {
           const lineWin = symbolData.value * betAmount * matchCount * multiplier;
           totalWin += lineWin;
@@ -120,7 +129,8 @@ const SlotMachine = () => {
 
     // Count scatter symbols
     newReels.flat().forEach(symbol => {
-      if (SYMBOLS[symbol as keyof typeof SYMBOLS]?.isScatter) {
+      const symbolData = SYMBOLS[symbol];
+      if (symbolData && symbolData.isScatter) {
         scatterCount++;
       }
     });
