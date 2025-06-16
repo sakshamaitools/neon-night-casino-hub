@@ -3,15 +3,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Shield, Users, Star } from "lucide-react";
+import { Zap, Shield, Users, Star, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
-import CasinoHeader from "@/components/CasinoHeader";
+import { useAuth } from "@/hooks/useAuth";
 import GameCard from "@/components/GameCard";
+import WalletDisplay from "@/components/WalletDisplay";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const { toast } = useToast();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user, signOut } = useAuth();
 
   const featuredGames = [
     {
@@ -41,23 +42,63 @@ const Index = () => {
   ];
 
   const handlePlayGame = (gameName: string) => {
-    if (!isLoggedIn) {
-      toast({
-        title: "Login Required",
-        description: "Please log in to start playing games",
-        variant: "destructive"
-      });
-      return;
-    }
     toast({
       title: `Starting ${gameName}`,
       description: "Good luck and have fun!"
     });
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Signed Out",
+      description: "You have been successfully signed out"
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-black text-white">
-      <CasinoHeader isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
+      {/* Header */}
+      <header className="border-b border-purple-500/20 bg-black/50 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-6">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                NEON CASINO
+              </h1>
+              <nav className="hidden md:flex space-x-6">
+                <Link to="/" className="text-gray-300 hover:text-white transition-colors">
+                  Home
+                </Link>
+                <Link to="/games" className="text-gray-300 hover:text-white transition-colors">
+                  Games
+                </Link>
+                <Link to="/slot-machine" className="text-gray-300 hover:text-white transition-colors">
+                  Slots
+                </Link>
+              </nav>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <WalletDisplay />
+              <div className="flex items-center space-x-3">
+                <span className="text-sm text-gray-300">
+                  Welcome, {user?.email}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
       
       {/* Hero Section */}
       <section className="relative py-20 px-4 overflow-hidden">
@@ -70,21 +111,24 @@ const Index = () => {
             Experience the thrill of premium online gaming with our cutting-edge casino platform
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 text-white border-0"
-              onClick={() => !isLoggedIn && setIsLoggedIn(true)}
-            >
-              <Zap className="mr-2 h-5 w-5" />
-              {isLoggedIn ? "Play Now" : "Join Now"}
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg"
-              className="border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-black transition-all duration-200"
-            >
-              View Games
-            </Button>
+            <Link to="/slot-machine">
+              <Button 
+                size="lg" 
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 text-white border-0"
+              >
+                <Zap className="mr-2 h-5 w-5" />
+                Play Slots
+              </Button>
+            </Link>
+            <Link to="/games">
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-black transition-all duration-200"
+              >
+                View All Games
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
