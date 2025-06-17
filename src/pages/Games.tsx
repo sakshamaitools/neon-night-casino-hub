@@ -1,14 +1,11 @@
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Search, Filter, Star } from "lucide-react";
 import CasinoHeader from "@/components/CasinoHeader";
-import GameCard from "@/components/GameCard";
+import GamesHeader from "@/components/GamesHeader";
+import GameFilters from "@/components/GameFilters";
+import FeaturedGames from "@/components/FeaturedGames";
+import GameGrid from "@/components/GameGrid";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 const Games = () => {
@@ -88,13 +85,11 @@ const Games = () => {
     }
     
     if (gameName.includes("Slots")) {
-      // Navigate to slot machine game - this will be handled by Link component
       toast({
         title: `Starting ${gameName}`,
         description: "Good luck and have fun!"
       });
     } else if (gameName.includes("Roulette")) {
-      // Navigate to roulette game - this will be handled by Link component
       toast({
         title: `Starting ${gameName}`,
         description: "Place your bets and spin the wheel!"
@@ -107,133 +102,33 @@ const Games = () => {
     }
   };
 
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setSelectedCategory("All");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-black text-white">
       <CasinoHeader isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
       
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Game Library
-          </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Discover hundreds of premium casino games with stunning graphics and exciting gameplay
-          </p>
-        </div>
+        <GamesHeader />
+        
+        <GameFilters 
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          categories={categories}
+        />
 
-        {/* Search and Filters */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search games..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-gray-800 border-gray-600 text-white focus:border-purple-400"
-              />
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category)}
-                  className={
-                    selectedCategory === category
-                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0"
-                      : "border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
-                  }
-                >
-                  {category}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
+        <FeaturedGames />
 
-        {/* Featured Games Highlights */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          {/* Slot Machine Highlight */}
-          <Card className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 border-yellow-500/30">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-2xl font-bold text-yellow-400 mb-2">🎰 Premium Slot Machine!</h3>
-                  <p className="text-gray-300">Experience our advanced slot machine with multiple themes, free spins, and progressive jackpots</p>
-                </div>
-                <Link to="/slot-machine">
-                  <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-bold">
-                    Play Slots Now
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Roulette Highlight */}
-          <Card className="bg-gradient-to-r from-red-900/20 to-black/40 border-red-500/30">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-2xl font-bold text-red-400 mb-2">🎲 European Roulette!</h3>
-                  <p className="text-gray-300">Spin the wheel and place your bets on our realistic 3D roulette table with smooth animations</p>
-                </div>
-                <Link to="/roulette">
-                  <Button className="bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white font-bold">
-                    Play Roulette Now
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Games Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredGames.map((game) => (
-            <div key={game.id}>
-              {game.name.includes("Slots") ? (
-                <Link to="/slot-machine">
-                  <GameCard 
-                    game={game} 
-                    onPlay={() => handlePlayGame(game.name)}
-                  />
-                </Link>
-              ) : game.name.includes("Roulette") ? (
-                <Link to="/roulette">
-                  <GameCard 
-                    game={game} 
-                    onPlay={() => handlePlayGame(game.name)}
-                  />
-                </Link>
-              ) : (
-                <GameCard 
-                  game={game} 
-                  onPlay={() => handlePlayGame(game.name)}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {filteredGames.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-400 text-lg">No games found matching your criteria</p>
-            <Button 
-              onClick={() => {
-                setSearchTerm("");
-                setSelectedCategory("All");
-              }}
-              className="mt-4 bg-purple-600 hover:bg-purple-700"
-            >
-              Clear Filters
-            </Button>
-          </div>
-        )}
+        <GameGrid 
+          filteredGames={filteredGames}
+          handlePlayGame={handlePlayGame}
+          onClearFilters={handleClearFilters}
+        />
       </div>
     </div>
   );
