@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Games from "./pages/Games";
 import SlotMachinePage from "./pages/SlotMachinePage";
+import RoulettePage from "./pages/RoulettePage";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -75,6 +76,11 @@ const App = () => (
             <Route path="/slot-machine" element={
               <ProtectedRoute>
                 <SlotMachinePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/roulette" element={
+              <ProtectedRoute>
+                <RoulettePage />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
