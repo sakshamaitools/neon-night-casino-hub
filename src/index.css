@@ -126,86 +126,167 @@
 }
 
 @layer components {
-  /* Casino-themed components */
+  /* Enhanced Casino-themed components */
   .casino-card {
-    @apply bg-gradient-to-br from-gray-800/90 to-gray-900/90 border border-yellow-500/20 backdrop-blur-sm;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 215, 0, 0.1);
+    @apply bg-gradient-to-br from-gray-800/95 to-gray-900/95 border border-yellow-500/30 backdrop-blur-lg;
+    box-shadow: 
+      0 10px 40px rgba(0, 0, 0, 0.6), 
+      0 0 0 1px rgba(255, 215, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    position: relative;
+  }
+
+  .casino-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.05) 0%, transparent 50%, rgba(255, 215, 0, 0.05) 100%);
+    border-radius: inherit;
+    pointer-events: none;
   }
 
   .casino-card:hover {
-    @apply border-yellow-400/40;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 215, 0, 0.2);
+    @apply border-yellow-400/50;
+    box-shadow: 
+      0 15px 50px rgba(0, 0, 0, 0.7), 
+      0 0 0 1px rgba(255, 215, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
     transform: translateY(-2px);
   }
 
   .casino-button {
-    @apply relative overflow-hidden font-semibold transition-all duration-200;
-    background: linear-gradient(145deg, hsl(var(--casino-gold)), hsl(var(--casino-accent)));
-    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+    @apply relative overflow-hidden font-bold transition-all duration-300;
+    background: linear-gradient(145deg, 
+      hsl(var(--casino-gold)), 
+      hsl(var(--casino-accent)),
+      #FFD700,
+      #FFA500
+    );
+    box-shadow: 
+      0 6px 20px rgba(255, 215, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+  }
+
+  .casino-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.5s;
+  }
+
+  .casino-button:hover::before {
+    left: 100%;
   }
 
   .casino-button:hover {
-    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
-    transform: translateY(-1px);
+    box-shadow: 
+      0 8px 25px rgba(255, 215, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px) scale(1.02);
   }
 
   .casino-button:active {
-    transform: translateY(0);
+    transform: translateY(0) scale(0.98);
+    box-shadow: 
+      0 4px 15px rgba(255, 215, 0, 0.3),
+      inset 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 
+  /* Enhanced Roulette Components */
   .roulette-number {
-    @apply w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white border-2 border-yellow-400/30;
-    transition: all 0.2s ease;
+    @apply w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white border-2 border-yellow-400/40 transition-all duration-300;
+    box-shadow: 
+      0 4px 12px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
   }
 
   .roulette-number:hover {
     @apply border-yellow-400 scale-110;
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    box-shadow: 
+      0 6px 18px rgba(255, 215, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
   }
 
   .roulette-number.red {
-    @apply bg-gradient-to-br from-red-600 to-red-700;
+    background: linear-gradient(145deg, #DC2626, #B91C1C, #7F1D1D);
+    border-color: rgba(220, 38, 38, 0.6);
   }
 
   .roulette-number.black {
-    @apply bg-gradient-to-br from-gray-800 to-gray-900;
+    background: linear-gradient(145deg, #374151, #1F2937, #111827);
+    border-color: rgba(55, 65, 81, 0.6);
   }
 
   .roulette-number.green {
-    @apply bg-gradient-to-br from-green-600 to-green-700;
+    background: linear-gradient(145deg, #10B981, #059669, #064E3B);
+    border-color: rgba(16, 185, 129, 0.6);
   }
 
+  /* Professional Chip Design */
   .chip {
-    @apply relative rounded-full font-bold text-center border-4 transition-all duration-200 cursor-pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    @apply relative rounded-full font-bold text-center border-4 transition-all duration-300 cursor-pointer;
+    box-shadow: 
+      0 6px 16px rgba(0, 0, 0, 0.4),
+      inset 0 2px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+    background: linear-gradient(145deg, currentColor, color-mix(in srgb, currentColor 80%, black));
+  }
+
+  .chip::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60%;
+    height: 60%;
+    border: 2px dashed rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
   }
 
   .chip:hover {
-    transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 
+      0 8px 20px rgba(0, 0, 0, 0.5),
+      inset 0 2px 0 rgba(255, 255, 255, 0.4),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.4);
   }
 
   .chip.selected {
-    transform: translateY(-3px) scale(1.1);
-    box-shadow: 0 8px 20px rgba(255, 215, 0, 0.5);
+    transform: translateY(-4px) scale(1.1);
+    box-shadow: 
+      0 10px 25px rgba(255, 215, 0, 0.6),
+      inset 0 2px 0 rgba(255, 255, 255, 0.5),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+    border-color: #FFD700;
   }
 
-  /* Animation utilities */
+  /* Enhanced Animation utilities */
   .glow {
-    animation: glow 2s ease-in-out infinite alternate;
+    animation: glow 3s ease-in-out infinite alternate;
   }
 
   @keyframes glow {
     from {
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+      box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
     }
     to {
-      box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+      box-shadow: 0 0 35px rgba(255, 215, 0, 0.8), 0 0 50px rgba(255, 215, 0, 0.3);
     }
   }
 
   .float {
-    animation: float 3s ease-in-out infinite;
+    animation: float 4s ease-in-out infinite;
   }
 
   @keyframes float {
@@ -213,26 +294,56 @@
       transform: translateY(0px);
     }
     50% {
-      transform: translateY(-10px);
+      transform: translateY(-12px);
     }
   }
 
-  .spin {
-    animation: spin 1s linear infinite;
-  }
-
   .pulse-gold {
-    animation: pulse-gold 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    animation: pulse-gold 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
   @keyframes pulse-gold {
     0%, 100% {
       opacity: 1;
-      box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+      box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.8);
     }
     50% {
-      opacity: .8;
-      box-shadow: 0 0 0 10px rgba(255, 215, 0, 0);
+      opacity: .9;
+      box-shadow: 0 0 0 15px rgba(255, 215, 0, 0);
     }
+  }
+
+  /* Professional fade animations */
+  .animate-fade-in {
+    animation: professional-fade-in 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+
+  @keyframes professional-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Luxurious gradient borders */
+  .border-gradient-to-r {
+    border-image: linear-gradient(to right, var(--tw-gradient-stops)) 1;
+  }
+}
+
+/* Professional Typography */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+  }
+  
+  h1, h2, h3 {
+    font-family: 'Playfair Display', serif;
   }
 }

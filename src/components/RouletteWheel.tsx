@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Play, RotateCcw, Undo, Settings } from 'lucide-react';
+import { Play, RotateCcw, Undo, TrendingUp, Clock } from 'lucide-react';
 import { useWallet } from '@/hooks/useWallet';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,15 +30,14 @@ const RouletteWheel: React.FC = () => {
   const [bets, setBets] = useState<Bet[]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
   const [winningNumber, setWinningNumber] = useState<number | null>(null);
-  const [gameVariant, setGameVariant] = useState<'european' | 'american'>('european');
   const [gameHistory, setGameHistory] = useState<number[]>([]);
   const [hotNumbers, setHotNumbers] = useState<Record<number, number>>({});
   
-  // Wheel canvas ref
+  // Wheel canvas refs
   const wheelCanvasRef = useRef<HTMLCanvasElement>(null);
   const ballCanvasRef = useRef<HTMLCanvasElement>(null);
   
-  // Roulette numbers layout
+  // European roulette numbers in wheel order
   const europeanNumbers: RouletteNumber[] = [
     { number: 0, color: 'green', position: 0 },
     { number: 32, color: 'red', position: 1 }, { number: 15, color: 'black', position: 2 },
@@ -64,7 +62,7 @@ const RouletteWheel: React.FC = () => {
   
   const chipValues = [1, 5, 25, 100, 500];
   
-  // Draw wheel function
+  // Professional 3D wheel rendering
   const drawWheel = useCallback((rotation = 0) => {
     const canvas = wheelCanvasRef.current;
     if (!canvas) return;
@@ -74,68 +72,137 @@ const RouletteWheel: React.FC = () => {
     
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const radius = Math.min(centerX, centerY) - 20;
+    const outerRadius = Math.min(centerX, centerY) - 10;
+    const innerRadius = outerRadius * 0.3;
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.translate(centerX, centerY);
     ctx.rotate(rotation);
     
-    // Draw wheel segments
+    // Draw outer metallic rim with 3D effect
+    const rimGradient = ctx.createRadialGradient(0, 0, innerRadius, 0, 0, outerRadius + 15);
+    rimGradient.addColorStop(0, '#8B7355');
+    rimGradient.addColorStop(0.7, '#D4AF37');
+    rimGradient.addColorStop(0.85, '#FFD700');
+    rimGradient.addColorStop(0.95, '#B8860B');
+    rimGradient.addColorStop(1, '#654321');
+    
+    ctx.beginPath();
+    ctx.arc(0, 0, outerRadius + 15, 0, 2 * Math.PI);
+    ctx.fillStyle = rimGradient;
+    ctx.fill();
+    
+    // Add metallic shine effect
+    const shineGradient = ctx.createLinearGradient(-outerRadius, -outerRadius, outerRadius, outerRadius);
+    shineGradient.addColorStop(0, 'rgba(255,255,255,0.3)');
+    shineGradient.addColorStop(0.5, 'rgba(255,255,255,0.1)');
+    shineGradient.addColorStop(1, 'rgba(0,0,0,0.2)');
+    ctx.fillStyle = shineGradient;
+    ctx.fill();
+    
+    // Draw number segments with 3D depth
     const totalNumbers = europeanNumbers.length;
     const anglePerSegment = (2 * Math.PI) / totalNumbers;
     
     europeanNumbers.forEach((num, index) => {
       const startAngle = index * anglePerSegment;
       const endAngle = (index + 1) * anglePerSegment;
+      const midAngle = startAngle + anglePerSegment / 2;
       
-      // Draw segment
+      // Create 3D segment effect
+      ctx.save();
+      
+      // Draw segment base
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.arc(0, 0, radius, startAngle, endAngle);
+      ctx.arc(0, 0, outerRadius, startAngle, endAngle);
       ctx.closePath();
       
-      // Set colors
+      // Professional color scheme with gradients
+      let baseColor, lightColor, darkColor;
       if (num.color === 'red') {
-        ctx.fillStyle = '#dc2626';
+        baseColor = '#B91C1C';
+        lightColor = '#DC2626';
+        darkColor = '#7F1D1D';
       } else if (num.color === 'black') {
-        ctx.fillStyle = '#1f2937';
+        baseColor = '#1F2937';
+        lightColor = '#374151';
+        darkColor = '#111827';
       } else {
-        ctx.fillStyle = '#059669';
+        baseColor = '#059669';
+        lightColor = '#10B981';
+        darkColor = '#064E3B';
       }
+      
+      // Create radial gradient for 3D effect
+      const segmentGradient = ctx.createRadialGradient(
+        Math.cos(midAngle) * outerRadius * 0.3, 
+        Math.sin(midAngle) * outerRadius * 0.3, 
+        0,
+        0, 0, outerRadius
+      );
+      segmentGradient.addColorStop(0, lightColor);
+      segmentGradient.addColorStop(0.6, baseColor);
+      segmentGradient.addColorStop(1, darkColor);
+      
+      ctx.fillStyle = segmentGradient;
       ctx.fill();
       
-      // Draw border
-      ctx.strokeStyle = '#fbbf24';
-      ctx.lineWidth = 2;
+      // Add segment borders with gold accent
+      ctx.strokeStyle = '#D4AF37';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
       
-      // Draw number
+      // Draw number with professional typography
       ctx.save();
-      ctx.rotate(startAngle + anglePerSegment / 2);
-      ctx.translate(radius * 0.75, 0);
-      ctx.rotate(-startAngle - anglePerSegment / 2 - rotation);
-      ctx.fillStyle = 'white';
-      ctx.font = 'bold 14px Arial';
+      ctx.rotate(midAngle);
+      ctx.translate(outerRadius * 0.75, 0);
+      ctx.rotate(-midAngle - rotation);
+      
+      // Add text shadow for depth
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.font = 'bold 16px "Playfair Display", serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
+      ctx.fillText(num.number.toString(), 1, 1);
+      
+      // Draw main text
+      ctx.fillStyle = '#FFFFFF';
       ctx.fillText(num.number.toString(), 0, 0);
+      
+      ctx.restore();
       ctx.restore();
     });
     
-    // Draw center circle
+    // Draw elegant center hub
+    const centerGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, innerRadius);
+    centerGradient.addColorStop(0, '#FFD700');
+    centerGradient.addColorStop(0.3, '#D4AF37');
+    centerGradient.addColorStop(0.7, '#B8860B');
+    centerGradient.addColorStop(1, '#8B7355');
+    
     ctx.beginPath();
-    ctx.arc(0, 0, 30, 0, 2 * Math.PI);
-    ctx.fillStyle = '#fbbf24';
+    ctx.arc(0, 0, innerRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = centerGradient;
     ctx.fill();
-    ctx.strokeStyle = '#92400e';
+    
+    // Add center hub details
+    ctx.strokeStyle = '#654321';
     ctx.lineWidth = 3;
     ctx.stroke();
+    
+    // Center logo/symbol
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 20px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('★', 0, 0);
     
     ctx.restore();
   }, []);
   
-  // Draw ball function
+  // Professional ball rendering with realistic physics
   const drawBall = useCallback((angle: number, distance: number) => {
     const canvas = ballCanvasRef.current;
     if (!canvas) return;
@@ -150,13 +217,38 @@ const RouletteWheel: React.FC = () => {
     const ballX = centerX + Math.cos(angle) * distance;
     const ballY = centerY + Math.sin(angle) * distance;
     
-    // Draw ball
+    // Draw ball shadow for depth
+    ctx.beginPath();
+    ctx.arc(ballX + 2, ballY + 2, 10, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fill();
+    
+    // Draw main ball with 3D gradient
+    const ballGradient = ctx.createRadialGradient(
+      ballX - 3, ballY - 3, 0,
+      ballX, ballY, 10
+    );
+    ballGradient.addColorStop(0, '#FFFFFF');
+    ballGradient.addColorStop(0.3, '#F8F9FA');
+    ballGradient.addColorStop(0.7, '#E9ECEF');
+    ballGradient.addColorStop(1, '#ADB5BD');
+    
     ctx.beginPath();
     ctx.arc(ballX, ballY, 8, 0, 2 * Math.PI);
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = ballGradient;
     ctx.fill();
-    ctx.strokeStyle = '#374151';
-    ctx.lineWidth = 2;
+    
+    // Add ball highlight
+    ctx.beginPath();
+    ctx.arc(ballX - 2, ballY - 2, 3, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.fill();
+    
+    // Ball rim
+    ctx.beginPath();
+    ctx.arc(ballX, ballY, 8, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#6C757D';
+    ctx.lineWidth = 1;
     ctx.stroke();
   }, []);
   
@@ -165,7 +257,7 @@ const RouletteWheel: React.FC = () => {
     drawWheel();
   }, [drawWheel]);
   
-  // Spin wheel function
+  // Enhanced spin function with realistic physics
   const spinWheel = async () => {
     if (!wallet || wallet.balance < 1 || bets.length === 0) {
       toast({
@@ -179,34 +271,39 @@ const RouletteWheel: React.FC = () => {
     setIsSpinning(true);
     setWinningNumber(null);
     
-    // Calculate total bet amount
     const totalBet = bets.reduce((sum, bet) => sum + bet.amount, 0);
-    
-    // Deduct bet amount
     await updateBalance(-totalBet, 'bet', 'Roulette bet');
     
-    // Generate random winning number
     const randomIndex = Math.floor(Math.random() * europeanNumbers.length);
     const winner = europeanNumbers[randomIndex];
     
-    // Animate spin
+    // Advanced physics simulation
     let rotation = 0;
     let ballAngle = 0;
-    let ballDistance = 150;
-    const finalRotation = Math.random() * 10 + 15; // 15-25 rotations
-    const spinDuration = 3000;
+    let ballDistance = 180;
+    const baseRotations = 8 + Math.random() * 6; // 8-14 rotations
+    const finalRotation = baseRotations * 2 * Math.PI;
+    const spinDuration = 4000; // 4 seconds
     const startTime = Date.now();
     
     const animate = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / spinDuration, 1);
       
-      // Easing function for realistic deceleration
-      const easeOut = 1 - Math.pow(1 - progress, 3);
+      // Advanced easing with multiple phases
+      let easeProgress;
+      if (progress < 0.7) {
+        // Fast spin phase
+        easeProgress = progress / 0.7;
+      } else {
+        // Deceleration phase with realistic friction
+        const decelerationProgress = (progress - 0.7) / 0.3;
+        easeProgress = 0.7 + 0.3 * (1 - Math.pow(1 - decelerationProgress, 3));
+      }
       
-      rotation = (finalRotation * 2 * Math.PI * easeOut) % (2 * Math.PI);
-      ballAngle = -rotation * 5; // Ball moves opposite direction
-      ballDistance = 150 - (progress * 50); // Ball moves inward
+      rotation = finalRotation * easeProgress;
+      ballAngle = -rotation * 3 + Math.sin(progress * 20) * 0.1; // Add wobble
+      ballDistance = 180 - (progress * 60) + Math.sin(progress * 30) * 5; // Bouncing effect
       
       drawWheel(rotation);
       drawBall(ballAngle, ballDistance);
@@ -214,7 +311,7 @@ const RouletteWheel: React.FC = () => {
       if (progress < 1) {
         requestAnimationFrame(animate);
       } else {
-        // Determine final position
+        // Determine final winner based on physics
         const finalAngle = (rotation + Math.PI) % (2 * Math.PI);
         const segmentAngle = (2 * Math.PI) / europeanNumbers.length;
         const segmentIndex = Math.floor(finalAngle / segmentAngle);
@@ -238,7 +335,7 @@ const RouletteWheel: React.FC = () => {
         if (totalWin > 0) {
           updateBalance(totalWin, 'win', `Roulette win - number ${finalWinner.number}`);
           toast({
-            title: "Winner!",
+            title: "🎉 Winner!",
             description: `Number ${finalWinner.number} wins! You won $${totalWin.toFixed(2)}`,
           });
         } else {
@@ -256,7 +353,6 @@ const RouletteWheel: React.FC = () => {
     animate();
   };
   
-  // Place bet function
   const placeBet = (betType: string, numbers: number[], payout: number, event?: React.MouseEvent) => {
     if (!wallet || wallet.balance < selectedChip) {
       toast({
@@ -279,84 +375,88 @@ const RouletteWheel: React.FC = () => {
     setBets(prev => [...prev, newBet]);
   };
   
-  // Clear all bets
-  const clearBets = () => {
-    setBets([]);
-  };
+  const clearBets = () => setBets([]);
+  const undoLastBet = () => setBets(prev => prev.slice(0, -1));
   
-  // Undo last bet
-  const undoLastBet = () => {
-    setBets(prev => prev.slice(0, -1));
-  };
-  
-  // Get number color
   const getNumberColor = (num: number) => {
     const numberData = europeanNumbers.find(n => n.number === num);
     return numberData?.color || 'green';
   };
   
-  // Calculate total bet amount
   const totalBetAmount = bets.reduce((sum, bet) => sum + bet.amount, 0);
 
   return (
-    <div className="max-w-7xl mx-auto p-4 space-y-6">
-      {/* Game Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-white mb-2">🎰 Roulette</h2>
-          <p className="text-gray-300">European Roulette - Place your bets!</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Badge className="bg-blue-600/20 text-blue-400 border-blue-600/50">
-            Total Bet: ${totalBetAmount.toFixed(2)}
-          </Badge>
-          {winningNumber !== null && (
-            <Badge className={`${
-              getNumberColor(winningNumber) === 'red' ? 'bg-red-600/20 text-red-400 border-red-600/50' :
-              getNumberColor(winningNumber) === 'black' ? 'bg-gray-600/20 text-gray-400 border-gray-600/50' :
-              'bg-green-600/20 text-green-400 border-green-600/50'
-            }`}>
-              Winning: {winningNumber}
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
+      {/* Premium Game Header */}
+      <div className="casino-card p-6 mb-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+              <span className="text-2xl">🎰</span>
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                European Roulette
+              </h2>
+              <p className="text-gray-400">Premium Casino Experience</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-6">
+            <Badge className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-blue-300 border-blue-600/50 px-4 py-2">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Total Bet: ${totalBetAmount.toFixed(2)}
             </Badge>
-          )}
+            {winningNumber !== null && (
+              <Badge className={`px-4 py-2 ${
+                getNumberColor(winningNumber) === 'red' ? 'bg-gradient-to-r from-red-600/20 to-red-700/20 text-red-300 border-red-600/50' :
+                getNumberColor(winningNumber) === 'black' ? 'bg-gradient-to-r from-gray-600/20 to-gray-700/20 text-gray-300 border-gray-600/50' :
+                'bg-gradient-to-r from-green-600/20 to-green-700/20 text-green-300 border-green-600/50'
+              }`}>
+                🏆 Winning: {winningNumber}
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Wheel Section */}
-        <div className="lg:col-span-2">
-          <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-purple-500/20">
-            <CardContent className="p-6">
-              <div className="relative w-full aspect-square max-w-md mx-auto">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        {/* Premium Wheel Section */}
+        <div className="xl:col-span-2">
+          <Card className="casino-card">
+            <CardContent className="p-8">
+              <div className="relative w-full aspect-square max-w-lg mx-auto mb-8">
+                {/* Wheel Container with Professional Styling */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-900/20 via-yellow-900/30 to-orange-900/20 shadow-2xl"></div>
                 <canvas
                   ref={wheelCanvasRef}
-                  width="400"
-                  height="400"
-                  className="absolute inset-0 w-full h-full"
+                  width="500"
+                  height="500"
+                  className="absolute inset-0 w-full h-full rounded-full shadow-inner"
                 />
                 <canvas
                   ref={ballCanvasRef}
-                  width="400"
-                  height="400"
-                  className="absolute inset-0 w-full h-full pointer-events-none"
+                  width="500"
+                  height="500"
+                  className="absolute inset-0 w-full h-full pointer-events-none rounded-full"
                 />
+                {/* Professional Wheel Border */}
+                <div className="absolute inset-0 rounded-full border-4 border-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400"></div>
               </div>
               
-              {/* Game Controls */}
-              <div className="flex justify-center gap-4 mt-6">
+              {/* Elegant Game Controls */}
+              <div className="flex justify-center gap-6">
                 <Button
                   onClick={spinWheel}
                   disabled={isSpinning || bets.length === 0}
-                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-3"
+                  className="casino-button px-8 py-4 text-lg font-bold text-black"
                 >
-                  <Play className="w-5 h-5 mr-2" />
-                  {isSpinning ? 'Spinning...' : 'Spin'}
+                  <Play className="w-6 h-6 mr-3" />
+                  {isSpinning ? 'Spinning...' : 'SPIN'}
                 </Button>
                 <Button
                   onClick={clearBets}
                   disabled={isSpinning || bets.length === 0}
-                  variant="outline"
-                  className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                  className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-6 py-4 font-semibold"
                 >
                   <RotateCcw className="w-5 h-5 mr-2" />
                   Clear
@@ -364,8 +464,7 @@ const RouletteWheel: React.FC = () => {
                 <Button
                   onClick={undoLastBet}
                   disabled={isSpinning || bets.length === 0}
-                  variant="outline"
-                  className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+                  className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white px-6 py-4 font-semibold"
                 >
                   <Undo className="w-5 h-5 mr-2" />
                   Undo
@@ -375,21 +474,24 @@ const RouletteWheel: React.FC = () => {
           </Card>
         </div>
 
-        {/* Betting Panel */}
-        <div className="space-y-4">
-          {/* Chip Selection */}
-          <Card className="bg-gradient-to-r from-gray-800 to-gray-900 border-purple-500/20">
-            <CardContent className="p-4">
-              <h3 className="text-lg font-semibold text-white mb-3">Select Chip</h3>
-              <div className="grid grid-cols-5 gap-2">
+        {/* Professional Betting Panel */}
+        <div className="space-y-6">
+          {/* Luxury Chip Selection */}
+          <Card className="casino-card">
+            <CardContent className="p-6">
+              <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                <span className="w-2 h-8 bg-gradient-to-b from-yellow-400 to-orange-500 rounded-full mr-3"></span>
+                Select Chip Value
+              </h3>
+              <div className="grid grid-cols-5 gap-3">
                 {chipValues.map(value => (
                   <button
                     key={value}
                     onClick={() => setSelectedChip(value)}
-                    className={`aspect-square rounded-full border-2 text-sm font-bold transition-all ${
+                    className={`chip aspect-square rounded-full text-sm font-bold transition-all duration-300 ${
                       selectedChip === value
-                        ? 'border-yellow-400 bg-yellow-600 text-black scale-110'
-                        : 'border-gray-600 bg-gray-700 text-white hover:border-yellow-500'
+                        ? 'selected border-yellow-400 bg-gradient-to-br from-yellow-500 to-orange-600 text-black scale-110 shadow-lg shadow-yellow-400/50'
+                        : 'border-gray-600 bg-gradient-to-br from-gray-700 to-gray-800 text-white hover:border-yellow-500 hover:scale-105'
                     }`}
                     disabled={isSpinning}
                   >
@@ -400,90 +502,48 @@ const RouletteWheel: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Quick Bets */}
-          <Card className="bg-gradient-to-r from-gray-800 to-gray-900 border-purple-500/20">
-            <CardContent className="p-4">
-              <h3 className="text-lg font-semibold text-white mb-3">Quick Bets</h3>
-              <div className="space-y-2">
-                <Button
-                  onClick={() => placeBet('Red', [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36], 2)}
-                  disabled={isSpinning}
-                  className="w-full bg-red-600 hover:bg-red-700"
-                >
-                  Red (2:1)
-                </Button>
-                <Button
-                  onClick={() => placeBet('Black', [2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35], 2)}
-                  disabled={isSpinning}
-                  className="w-full bg-gray-800 hover:bg-gray-900 border border-gray-600"
-                >
-                  Black (2:1)
-                </Button>
-                <Button
-                  onClick={() => placeBet('Even', [2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36], 2)}
-                  disabled={isSpinning}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                >
-                  Even (2:1)
-                </Button>
-                <Button
-                  onClick={() => placeBet('Odd', [1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35], 2)}
-                  disabled={isSpinning}
-                  className="w-full bg-purple-600 hover:bg-purple-700"
-                >
-                  Odd (2:1)
-                </Button>
-                <Button
-                  onClick={() => placeBet('Low (1-18)', Array.from({length: 18}, (_, i) => i + 1), 2)}
-                  disabled={isSpinning}
-                  className="w-full bg-orange-600 hover:bg-orange-700"
-                >
-                  Low 1-18 (2:1)
-                </Button>
-                <Button
-                  onClick={() => placeBet('High (19-36)', Array.from({length: 18}, (_, i) => i + 19), 2)}
-                  disabled={isSpinning}
-                  className="w-full bg-pink-600 hover:bg-pink-700"
-                >
-                  High 19-36 (2:1)
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Straight Number Bets */}
-          <Card className="bg-gradient-to-r from-gray-800 to-gray-900 border-purple-500/20">
-            <CardContent className="p-4">
-              <h3 className="text-lg font-semibold text-white mb-3">Straight Bets (35:1)</h3>
-              <div className="grid grid-cols-6 gap-1 text-xs">
-                {Array.from({length: 37}, (_, i) => i).map(num => (
-                  <button
-                    key={num}
-                    onClick={() => placeBet(`Straight ${num}`, [num], 36)}
+          {/* Professional Quick Bets */}
+          <Card className="casino-card">
+            <CardContent className="p-6">
+              <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                <span className="w-2 h-8 bg-gradient-to-b from-blue-400 to-purple-500 rounded-full mr-3"></span>
+                Quick Bets
+              </h3>
+              <div className="space-y-3">
+                {[
+                  { name: 'Red', numbers: [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36], payout: 2, color: 'from-red-600 to-red-700' },
+                  { name: 'Black', numbers: [2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35], payout: 2, color: 'from-gray-700 to-gray-800' },
+                  { name: 'Even', numbers: [2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36], payout: 2, color: 'from-blue-600 to-blue-700' },
+                  { name: 'Odd', numbers: [1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35], payout: 2, color: 'from-purple-600 to-purple-700' },
+                  { name: 'Low (1-18)', numbers: Array.from({length: 18}, (_, i) => i + 1), payout: 2, color: 'from-orange-600 to-orange-700' },
+                  { name: 'High (19-36)', numbers: Array.from({length: 18}, (_, i) => i + 19), payout: 2, color: 'from-pink-600 to-pink-700' }
+                ].map(bet => (
+                  <Button
+                    key={bet.name}
+                    onClick={() => placeBet(bet.name, bet.numbers, bet.payout)}
                     disabled={isSpinning}
-                    className={`aspect-square rounded text-white font-bold text-xs transition-all hover:scale-105 ${
-                      getNumberColor(num) === 'red' ? 'bg-red-600 hover:bg-red-700' :
-                      getNumberColor(num) === 'black' ? 'bg-gray-800 hover:bg-gray-900 border border-gray-600' :
-                      'bg-green-600 hover:bg-green-700'
-                    }`}
+                    className={`w-full bg-gradient-to-r ${bet.color} hover:scale-105 transition-all duration-200 font-semibold py-3`}
                   >
-                    {num}
-                  </button>
+                    {bet.name} ({bet.payout}:1)
+                  </Button>
                 ))}
               </div>
             </CardContent>
           </Card>
 
-          {/* Current Bets */}
+          {/* Current Bets Display */}
           {bets.length > 0 && (
-            <Card className="bg-gradient-to-r from-gray-800 to-gray-900 border-purple-500/20">
-              <CardContent className="p-4">
-                <h3 className="text-lg font-semibold text-white mb-3">Current Bets</h3>
-                <div className="space-y-2 max-h-32 overflow-y-auto">
+            <Card className="casino-card">
+              <CardContent className="p-6">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                  <span className="w-2 h-8 bg-gradient-to-b from-green-400 to-emerald-500 rounded-full mr-3"></span>
+                  Active Bets
+                </h3>
+                <div className="space-y-3 max-h-40 overflow-y-auto">
                   {bets.map(bet => (
-                    <div key={bet.id} className="flex justify-between items-center text-sm">
-                      <span className="text-gray-300">{bet.type}</span>
-                      <span className="text-yellow-400">${bet.amount}</span>
+                    <div key={bet.id} className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                      <span className="text-gray-300 font-medium">{bet.type}</span>
+                      <span className="text-yellow-400 font-bold">${bet.amount}</span>
                     </div>
                   ))}
                 </div>
@@ -493,18 +553,17 @@ const RouletteWheel: React.FC = () => {
 
           {/* Game History */}
           {gameHistory.length > 0 && (
-            <Card className="bg-gradient-to-r from-gray-800 to-gray-900 border-purple-500/20">
-              <CardContent className="p-4">
-                <h3 className="text-lg font-semibold text-white mb-3">Recent Numbers</h3>
-                <div className="flex flex-wrap gap-1">
-                  {gameHistory.slice(0, 10).map((num, index) => (
+            <Card className="casino-card">
+              <CardContent className="p-6">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                  <Clock className="w-5 h-5 mr-3 text-blue-400" />
+                  Recent Results
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {gameHistory.slice(0, 12).map((num, index) => (
                     <div
                       key={index}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                        getNumberColor(num) === 'red' ? 'bg-red-600' :
-                        getNumberColor(num) === 'black' ? 'bg-gray-800 border border-gray-600' :
-                        'bg-green-600'
-                      }`}
+                      className={`roulette-number ${getNumberColor(num)} ${index === 0 ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-gray-800' : ''}`}
                     >
                       {num}
                     </div>
