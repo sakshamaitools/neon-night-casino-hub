@@ -1,8 +1,9 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
+/* Enhanced Casino Design System */
 
 @layer base {
   :root {
@@ -37,30 +38,33 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Casino-specific variables */
+    --casino-gold: 45 100% 60%;
+    --casino-red: 0 85% 60%;
+    --casino-green: 142 70% 45%;
+    --casino-blue: 217 91% 60%;
+    --casino-purple: 260 85% 65%;
+    --casino-dark: 220 26% 14%;
+    --casino-darker: 225 25% 8%;
+    --casino-accent: 43 96% 56%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 225 25% 8%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 220 26% 14%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 220 26% 14%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 210 40% 98%;
@@ -98,6 +102,137 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    background: linear-gradient(135deg, hsl(var(--casino-darker)) 0%, hsl(var(--casino-dark)) 50%, hsl(220 20% 20%) 100%);
+    min-height: 100vh;
+  }
+
+  /* Enhanced Typography */
+  h1, h2, h3 {
+    @apply font-bold tracking-tight;
+  }
+
+  h1 {
+    @apply text-4xl lg:text-5xl;
+  }
+
+  h2 {
+    @apply text-3xl lg:text-4xl;
+  }
+
+  h3 {
+    @apply text-2xl lg:text-3xl;
+  }
+}
+
+@layer components {
+  /* Casino-themed components */
+  .casino-card {
+    @apply bg-gradient-to-br from-gray-800/90 to-gray-900/90 border border-yellow-500/20 backdrop-blur-sm;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 215, 0, 0.1);
+  }
+
+  .casino-card:hover {
+    @apply border-yellow-400/40;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 215, 0, 0.2);
+    transform: translateY(-2px);
+  }
+
+  .casino-button {
+    @apply relative overflow-hidden font-semibold transition-all duration-200;
+    background: linear-gradient(145deg, hsl(var(--casino-gold)), hsl(var(--casino-accent)));
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  }
+
+  .casino-button:hover {
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .casino-button:active {
+    transform: translateY(0);
+  }
+
+  .roulette-number {
+    @apply w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white border-2 border-yellow-400/30;
+    transition: all 0.2s ease;
+  }
+
+  .roulette-number:hover {
+    @apply border-yellow-400 scale-110;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+  }
+
+  .roulette-number.red {
+    @apply bg-gradient-to-br from-red-600 to-red-700;
+  }
+
+  .roulette-number.black {
+    @apply bg-gradient-to-br from-gray-800 to-gray-900;
+  }
+
+  .roulette-number.green {
+    @apply bg-gradient-to-br from-green-600 to-green-700;
+  }
+
+  .chip {
+    @apply relative rounded-full font-bold text-center border-4 transition-all duration-200 cursor-pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .chip:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  }
+
+  .chip.selected {
+    transform: translateY(-3px) scale(1.1);
+    box-shadow: 0 8px 20px rgba(255, 215, 0, 0.5);
+  }
+
+  /* Animation utilities */
+  .glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes glow {
+    from {
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    }
+    to {
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+    }
+  }
+
+  .float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+
+  .pulse-gold {
+    animation: pulse-gold 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-gold {
+    0%, 100% {
+      opacity: 1;
+      box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+    }
+    50% {
+      opacity: .8;
+      box-shadow: 0 0 0 10px rgba(255, 215, 0, 0);
+    }
   }
 }
