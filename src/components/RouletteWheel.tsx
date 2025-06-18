@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +38,7 @@ const RouletteWheel: React.FC = () => {
   const wheelCanvasRef = useRef<HTMLCanvasElement>(null);
   const ballCanvasRef = useRef<HTMLCanvasElement>(null);
   
-  // European roulette numbers in wheel order
+  // European roulette numbers in correct wheel order
   const europeanNumbers: RouletteNumber[] = [
     { number: 0, color: 'green', position: 0 },
     { number: 32, color: 'red', position: 1 }, { number: 15, color: 'black', position: 2 },
@@ -61,6 +62,10 @@ const RouletteWheel: React.FC = () => {
   ];
   
   const chipValues = [1, 5, 25, 100, 500];
+  
+  // Red and black numbers for proper color coding
+  const redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
+  const blackNumbers = [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35];
   
   // Professional 3D wheel rendering
   const drawWheel = useCallback((rotation = 0) => {
@@ -257,7 +262,7 @@ const RouletteWheel: React.FC = () => {
     drawWheel();
   }, [drawWheel]);
   
-  // Enhanced spin function with realistic physics
+  // Fixed spin function with correct physics and logic
   const spinWheel = async () => {
     if (!wallet || wallet.balance < 1 || bets.length === 0) {
       toast({
@@ -272,10 +277,25 @@ const RouletteWheel: React.FC = () => {
     setWinningNumber(null);
     
     const totalBet = bets.reduce((sum, bet) => sum + bet.amount, 0);
+    
+    // Check if user has sufficient balance
+    if (wallet.balance < totalBet) {
+      toast({
+        title: "Insufficient Balance",
+        description: "Not enough balance to place these bets",
+        variant: "destructive"
+      });
+      setIsSpinning(false);
+      return;
+    }
+    
     await updateBalance(-totalBet, 'bet', 'Roulette bet');
     
+    // Randomly select winning number
     const randomIndex = Math.floor(Math.random() * europeanNumbers.length);
     const winner = europeanNumbers[randomIndex];
+    
+    console.log('Selected winner:', winner);
     
     // Advanced physics simulation
     let rotation = 0;
@@ -285,6 +305,10 @@ const RouletteWheel: React.FC = () => {
     const finalRotation = baseRotations * 2 * Math.PI;
     const spinDuration = 4000; // 4 seconds
     const startTime = Date.now();
+    
+    // Calculate the target angle for the winning number
+    const anglePerSegment = (2 * Math.PI) / europeanNumbers.length;
+    const targetAngle = randomIndex * anglePerSegment;
     
     const animate = () => {
       const elapsed = Date.now() - startTime;
@@ -301,7 +325,8 @@ const RouletteWheel: React.FC = () => {
         easeProgress = 0.7 + 0.3 * (1 - Math.pow(1 - decelerationProgress, 3));
       }
       
-      rotation = finalRotation * easeProgress;
+      // Ensure wheel stops at the correct position
+      rotation = finalRotation * easeProgress + targetAngle * (1 - easeProgress);
       ballAngle = -rotation * 3 + Math.sin(progress * 20) * 0.1; // Add wobble
       ballDistance = 180 - (progress * 60) + Math.sin(progress * 30) * 5; // Bouncing effect
       
@@ -311,37 +336,39 @@ const RouletteWheel: React.FC = () => {
       if (progress < 1) {
         requestAnimationFrame(animate);
       } else {
-        // Determine final winner based on physics
-        const finalAngle = (rotation + Math.PI) % (2 * Math.PI);
-        const segmentAngle = (2 * Math.PI) / europeanNumbers.length;
-        const segmentIndex = Math.floor(finalAngle / segmentAngle);
-        const finalWinner = europeanNumbers[segmentIndex];
-        
-        setWinningNumber(finalWinner.number);
-        setGameHistory(prev => [finalWinner.number, ...prev.slice(0, 19)]);
+        // Set the winning number
+        setWinningNumber(winner.number);
+        setGameHistory(prev => [winner.number, ...prev.slice(0, 19)]);
         setHotNumbers(prev => ({
           ...prev,
-          [finalWinner.number]: (prev[finalWinner.number] || 0) + 1
+          [winner.number]: (prev[winner.number] || 0) + 1
         }));
         
-        // Calculate winnings
+        // Calculate winnings with correct logic
         let totalWin = 0;
+        const winningBets: string[] = [];
+        
         bets.forEach(bet => {
-          if (bet.numbers.includes(finalWinner.number)) {
-            totalWin += bet.amount * bet.payout;
+          if (bet.numbers.includes(winner.number)) {
+            const winAmount = bet.amount * bet.payout;
+            totalWin += winAmount;
+            winningBets.push(`${bet.type} ($${bet.amount} × ${bet.payout})`);
+            console.log(`Winning bet: ${bet.type}, amount: ${bet.amount}, payout: ${bet.payout}, win: ${winAmount}`);
           }
         });
         
+        console.log('Total win amount:', totalWin);
+        
         if (totalWin > 0) {
-          updateBalance(totalWin, 'win', `Roulette win - number ${finalWinner.number}`);
+          updateBalance(totalWin, 'win', `Roulette win - number ${winner.number}`);
           toast({
             title: "🎉 Winner!",
-            description: `Number ${finalWinner.number} wins! You won $${totalWin.toFixed(2)}`,
+            description: `Number ${winner.number} wins! You won $${totalWin.toFixed(2)}`,
           });
         } else {
           toast({
             title: "Try Again",
-            description: `Number ${finalWinner.number}. Better luck next time!`,
+            description: `Number ${winner.number}. Better luck next time!`,
             variant: "destructive"
           });
         }
@@ -363,6 +390,15 @@ const RouletteWheel: React.FC = () => {
       return;
     }
     
+    if (isSpinning) {
+      toast({
+        title: "Cannot Place Bet",
+        description: "Cannot place bets while wheel is spinning",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const newBet: Bet = {
       id: Math.random().toString(36),
       type: betType,
@@ -373,14 +409,38 @@ const RouletteWheel: React.FC = () => {
     };
     
     setBets(prev => [...prev, newBet]);
+    
+    console.log('Placed bet:', newBet);
+    
+    toast({
+      title: "Bet Placed",
+      description: `${betType} - $${selectedChip}`,
+    });
   };
   
-  const clearBets = () => setBets([]);
-  const undoLastBet = () => setBets(prev => prev.slice(0, -1));
+  const clearBets = () => {
+    if (isSpinning) return;
+    setBets([]);
+    toast({
+      title: "Bets Cleared",
+      description: "All bets have been removed",
+    });
+  };
   
-  const getNumberColor = (num: number) => {
-    const numberData = europeanNumbers.find(n => n.number === num);
-    return numberData?.color || 'green';
+  const undoLastBet = () => {
+    if (isSpinning || bets.length === 0) return;
+    setBets(prev => prev.slice(0, -1));
+    toast({
+      title: "Bet Removed",
+      description: "Last bet has been removed",
+    });
+  };
+  
+  const getNumberColor = (num: number): 'red' | 'black' | 'green' => {
+    if (num === 0) return 'green';
+    if (redNumbers.includes(num)) return 'red';
+    if (blackNumbers.includes(num)) return 'black';
+    return 'green';
   };
   
   const totalBetAmount = bets.reduce((sum, bet) => sum + bet.amount, 0);
@@ -447,7 +507,7 @@ const RouletteWheel: React.FC = () => {
               <div className="flex justify-center gap-6">
                 <Button
                   onClick={spinWheel}
-                  disabled={isSpinning || bets.length === 0}
+                  disabled={isSpinning || bets.length === 0 || !wallet || wallet.balance < totalBetAmount}
                   className="casino-button px-8 py-4 text-lg font-bold text-black"
                 >
                   <Play className="w-6 h-6 mr-3" />
@@ -511,8 +571,8 @@ const RouletteWheel: React.FC = () => {
               </h3>
               <div className="space-y-3">
                 {[
-                  { name: 'Red', numbers: [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36], payout: 2, color: 'from-red-600 to-red-700' },
-                  { name: 'Black', numbers: [2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35], payout: 2, color: 'from-gray-700 to-gray-800' },
+                  { name: 'Red', numbers: redNumbers, payout: 2, color: 'from-red-600 to-red-700' },
+                  { name: 'Black', numbers: blackNumbers, payout: 2, color: 'from-gray-700 to-gray-800' },
                   { name: 'Even', numbers: [2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36], payout: 2, color: 'from-blue-600 to-blue-700' },
                   { name: 'Odd', numbers: [1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35], payout: 2, color: 'from-purple-600 to-purple-700' },
                   { name: 'Low (1-18)', numbers: Array.from({length: 18}, (_, i) => i + 1), payout: 2, color: 'from-orange-600 to-orange-700' },
@@ -521,7 +581,7 @@ const RouletteWheel: React.FC = () => {
                   <Button
                     key={bet.name}
                     onClick={() => placeBet(bet.name, bet.numbers, bet.payout)}
-                    disabled={isSpinning}
+                    disabled={isSpinning || !wallet || wallet.balance < selectedChip}
                     className={`w-full bg-gradient-to-r ${bet.color} hover:scale-105 transition-all duration-200 font-semibold py-3`}
                   >
                     {bet.name} ({bet.payout}:1)
