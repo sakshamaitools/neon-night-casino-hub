@@ -70,10 +70,9 @@ const GameGrid = ({ filteredGames, handlePlayGame, onClearFilters }: GameGridPro
         {filteredGames.map((game, index) => (
           <div 
             key={game.id} 
-            className="transform transition-all duration-300"
+            className="transform transition-all duration-300 animate-fade-in"
             style={{ 
-              animationDelay: `${index * 100}ms`,
-              animation: 'fadeInUp 0.6s ease-out forwards'
+              animationDelay: `${index * 100}ms`
             }}
           >
             {game.name.includes("Slots") ? (
@@ -104,16 +103,3 @@ const GameGrid = ({ filteredGames, handlePlayGame, onClearFilters }: GameGridPro
 };
 
 export default GameGrid;
-
-<style>
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-</style>
