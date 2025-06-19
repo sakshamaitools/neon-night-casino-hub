@@ -344,12 +344,19 @@ const RouletteWheel: React.FC = () => {
           [winner.number]: (prev[winner.number] || 0) + 1
         }));
         
-        // Calculate winnings with correct logic
+        // FIXED: Calculate winnings with correct logic
         let totalWin = 0;
         const winningBets: string[] = [];
         
         bets.forEach(bet => {
+          let isWinningBet = false;
+          
+          // Check if this bet wins based on the winning number
           if (bet.numbers.includes(winner.number)) {
+            isWinningBet = true;
+          }
+          
+          if (isWinningBet) {
             const winAmount = bet.amount * bet.payout;
             totalWin += winAmount;
             winningBets.push(`${bet.type} ($${bet.amount} × ${bet.payout})`);
@@ -358,6 +365,7 @@ const RouletteWheel: React.FC = () => {
         });
         
         console.log('Total win amount:', totalWin);
+        console.log('Winning bets:', winningBets);
         
         if (totalWin > 0) {
           updateBalance(totalWin, 'win', `Roulette win - number ${winner.number}`);
@@ -367,7 +375,7 @@ const RouletteWheel: React.FC = () => {
           });
         } else {
           toast({
-            title: "Try Again",
+            title: "House Wins",
             description: `Number ${winner.number}. Better luck next time!`,
             variant: "destructive"
           });
@@ -562,21 +570,55 @@ const RouletteWheel: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Professional Quick Bets */}
+          {/* FIXED: Proper Roulette Betting Table with Individual Numbers */}
+          <Card className="casino-card">
+            <CardContent className="p-6">
+              <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                <span className="w-2 h-8 bg-gradient-to-b from-green-400 to-emerald-500 rounded-full mr-3"></span>
+                Number Betting
+              </h3>
+              
+              {/* Individual Number Grid (0-36) */}
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                {/* Zero */}
+                <button
+                  onClick={() => placeBet('Number 0', [0], 35)}
+                  disabled={isSpinning || !wallet || wallet.balance < selectedChip}
+                  className="roulette-number green hover:scale-105 transition-all"
+                >
+                  0
+                </button>
+                
+                {/* Numbers 1-36 in proper roulette table layout */}
+                {Array.from({ length: 36 }, (_, i) => i + 1).map(num => (
+                  <button
+                    key={num}
+                    onClick={() => placeBet(`Number ${num}`, [num], 35)}
+                    disabled={isSpinning || !wallet || wallet.balance < selectedChip}
+                    className={`roulette-number ${getNumberColor(num)} hover:scale-105 transition-all`}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* FIXED: Traditional Roulette Bets Only */}
           <Card className="casino-card">
             <CardContent className="p-6">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center">
                 <span className="w-2 h-8 bg-gradient-to-b from-blue-400 to-purple-500 rounded-full mr-3"></span>
-                Quick Bets
+                Outside Bets
               </h3>
               <div className="space-y-3">
                 {[
                   { name: 'Red', numbers: redNumbers, payout: 2, color: 'from-red-600 to-red-700' },
                   { name: 'Black', numbers: blackNumbers, payout: 2, color: 'from-gray-700 to-gray-800' },
-                  { name: 'Even', numbers: [2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36], payout: 2, color: 'from-blue-600 to-blue-700' },
-                  { name: 'Odd', numbers: [1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35], payout: 2, color: 'from-purple-600 to-purple-700' },
-                  { name: 'Low (1-18)', numbers: Array.from({length: 18}, (_, i) => i + 1), payout: 2, color: 'from-orange-600 to-orange-700' },
-                  { name: 'High (19-36)', numbers: Array.from({length: 18}, (_, i) => i + 19), payout: 2, color: 'from-pink-600 to-pink-700' }
+                  { name: 'Even', numbers: [2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36], payout: 2, color: 'from-gray-600 to-gray-700' },
+                  { name: 'Odd', numbers: [1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35], payout: 2, color: 'from-gray-600 to-gray-700' },
+                  { name: 'Low (1-18)', numbers: Array.from({length: 18}, (_, i) => i + 1), payout: 2, color: 'from-gray-600 to-gray-700' },
+                  { name: 'High (19-36)', numbers: Array.from({length: 18}, (_, i) => i + 19), payout: 2, color: 'from-gray-600 to-gray-700' }
                 ].map(bet => (
                   <Button
                     key={bet.name}
@@ -587,6 +629,43 @@ const RouletteWheel: React.FC = () => {
                     {bet.name} ({bet.payout}:1)
                   </Button>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Dozens and Columns */}
+          <Card className="casino-card">
+            <CardContent className="p-6">
+              <h3 className="text-xl font-bold text-white mb-4">Dozens & Columns</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={() => placeBet('1st Dozen', Array.from({length: 12}, (_, i) => i + 1), 3)}
+                  disabled={isSpinning || !wallet || wallet.balance < selectedChip}
+                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:scale-105 transition-all font-semibold"
+                >
+                  1st 12 (3:1)
+                </Button>
+                <Button
+                  onClick={() => placeBet('2nd Dozen', Array.from({length: 12}, (_, i) => i + 13), 3)}
+                  disabled={isSpinning || !wallet || wallet.balance < selectedChip}
+                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:scale-105 transition-all font-semibold"
+                >
+                  2nd 12 (3:1)
+                </Button>
+                <Button
+                  onClick={() => placeBet('3rd Dozen', Array.from({length: 12}, (_, i) => i + 25), 3)}
+                  disabled={isSpinning || !wallet || wallet.balance < selectedChip}
+                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:scale-105 transition-all font-semibold"
+                >
+                  3rd 12 (3:1)
+                </Button>
+                <Button
+                  onClick={() => placeBet('Column 1', [1,4,7,10,13,16,19,22,25,28,31,34], 3)}
+                  disabled={isSpinning || !wallet || wallet.balance < selectedChip}
+                  className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:scale-105 transition-all font-semibold"
+                >
+                  Col 1 (3:1)
+                </Button>
               </div>
             </CardContent>
           </Card>
