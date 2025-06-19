@@ -63,7 +63,7 @@ const RouletteWheel: React.FC = () => {
   
   const chipValues = [1, 5, 25, 100, 500];
   
-  // Red and black numbers for proper color coding
+  // Correct red and black numbers for European roulette
   const redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
   const blackNumbers = [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35];
   
@@ -207,7 +207,6 @@ const RouletteWheel: React.FC = () => {
     ctx.restore();
   }, []);
   
-  // Professional ball rendering with realistic physics
   const drawBall = useCallback((angle: number, distance: number) => {
     const canvas = ballCanvasRef.current;
     if (!canvas) return;
@@ -262,7 +261,7 @@ const RouletteWheel: React.FC = () => {
     drawWheel();
   }, [drawWheel]);
   
-  // Fixed spin function with correct physics and logic
+  // FIXED: Completely rewritten spin function with proper win detection
   const spinWheel = async () => {
     if (!wallet || wallet.balance < 1 || bets.length === 0) {
       toast({
@@ -278,7 +277,6 @@ const RouletteWheel: React.FC = () => {
     
     const totalBet = bets.reduce((sum, bet) => sum + bet.amount, 0);
     
-    // Check if user has sufficient balance
     if (wallet.balance < totalBet) {
       toast({
         title: "Insufficient Balance",
@@ -295,18 +293,21 @@ const RouletteWheel: React.FC = () => {
     const randomIndex = Math.floor(Math.random() * europeanNumbers.length);
     const winner = europeanNumbers[randomIndex];
     
-    console.log('Selected winner:', winner);
+    console.log('=== ROULETTE SPIN DEBUG ===');
+    console.log('Winning number:', winner.number);
+    console.log('Winning color:', winner.color);
+    console.log('Total bets placed:', bets.length);
+    console.log('All bets:', bets);
     
-    // Advanced physics simulation
+    // Advanced physics simulation for wheel animation
     let rotation = 0;
     let ballAngle = 0;
     let ballDistance = 180;
-    const baseRotations = 8 + Math.random() * 6; // 8-14 rotations
+    const baseRotations = 8 + Math.random() * 6;
     const finalRotation = baseRotations * 2 * Math.PI;
-    const spinDuration = 4000; // 4 seconds
+    const spinDuration = 4000;
     const startTime = Date.now();
     
-    // Calculate the target angle for the winning number
     const anglePerSegment = (2 * Math.PI) / europeanNumbers.length;
     const targetAngle = randomIndex * anglePerSegment;
     
@@ -314,21 +315,17 @@ const RouletteWheel: React.FC = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / spinDuration, 1);
       
-      // Advanced easing with multiple phases
       let easeProgress;
       if (progress < 0.7) {
-        // Fast spin phase
         easeProgress = progress / 0.7;
       } else {
-        // Deceleration phase with realistic friction
         const decelerationProgress = (progress - 0.7) / 0.3;
         easeProgress = 0.7 + 0.3 * (1 - Math.pow(1 - decelerationProgress, 3));
       }
       
-      // Ensure wheel stops at the correct position
       rotation = finalRotation * easeProgress + targetAngle * (1 - easeProgress);
-      ballAngle = -rotation * 3 + Math.sin(progress * 20) * 0.1; // Add wobble
-      ballDistance = 180 - (progress * 60) + Math.sin(progress * 30) * 5; // Bouncing effect
+      ballAngle = -rotation * 3 + Math.sin(progress * 20) * 0.1;
+      ballDistance = 180 - (progress * 60) + Math.sin(progress * 30) * 5;
       
       drawWheel(rotation);
       drawBall(ballAngle, ballDistance);
@@ -344,39 +341,71 @@ const RouletteWheel: React.FC = () => {
           [winner.number]: (prev[winner.number] || 0) + 1
         }));
         
-        // FIXED: Calculate winnings with correct logic
+        // FIXED: Completely rewritten win detection logic
         let totalWin = 0;
         const winningBets: string[] = [];
+        const losingBets: string[] = [];
         
         bets.forEach(bet => {
           let isWinningBet = false;
+          let actualPayout = 0;
           
-          // Check if this bet wins based on the winning number
-          if (bet.numbers.includes(winner.number)) {
-            isWinningBet = true;
+          console.log(`Checking bet: ${bet.type}, numbers: [${bet.numbers.join(', ')}], amount: $${bet.amount}`);
+          
+          // Proper win detection based on bet type
+          if (bet.type.startsWith('Number ')) {
+            // Single number bet (35:1 + original bet back)
+            isWinningBet = bet.numbers.includes(winner.number);
+            actualPayout = isWinningBet ? bet.amount * 35 + bet.amount : 0; // 35:1 + original bet
+          } else if (bet.type === 'Red') {
+            isWinningBet = redNumbers.includes(winner.number);
+            actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0; // 1:1 + original bet
+          } else if (bet.type === 'Black') {
+            isWinningBet = blackNumbers.includes(winner.number);
+            actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0; // 1:1 + original bet
+          } else if (bet.type === 'Even') {
+            isWinningBet = winner.number !== 0 && winner.number % 2 === 0;
+            actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0; // 1:1 + original bet
+          } else if (bet.type === 'Odd') {
+            isWinningBet = winner.number !== 0 && winner.number % 2 === 1;
+            actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0; // 1:1 + original bet
+          } else if (bet.type === 'Low (1-18)') {
+            isWinningBet = winner.number >= 1 && winner.number <= 18;
+            actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0; // 1:1 + original bet
+          } else if (bet.type === 'High (19-36)') {
+            isWinningBet = winner.number >= 19 && winner.number <= 36;
+            actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0; // 1:1 + original bet
+          } else if (bet.type.includes('Dozen') || bet.type.includes('Col')) {
+            // Dozens and columns (2:1 + original bet back)
+            isWinningBet = bet.numbers.includes(winner.number);
+            actualPayout = isWinningBet ? bet.amount * 2 + bet.amount : 0; // 2:1 + original bet
           }
           
+          console.log(`Bet result: ${isWinningBet ? 'WIN' : 'LOSE'}, payout: $${actualPayout}`);
+          
           if (isWinningBet) {
-            const winAmount = bet.amount * bet.payout;
-            totalWin += winAmount;
-            winningBets.push(`${bet.type} ($${bet.amount} × ${bet.payout})`);
-            console.log(`Winning bet: ${bet.type}, amount: ${bet.amount}, payout: ${bet.payout}, win: ${winAmount}`);
+            totalWin += actualPayout;
+            winningBets.push(`${bet.type} ($${bet.amount} → $${actualPayout})`);
+          } else {
+            losingBets.push(`${bet.type} ($${bet.amount})`);
           }
         });
         
+        console.log('=== FINAL RESULTS ===');
         console.log('Total win amount:', totalWin);
         console.log('Winning bets:', winningBets);
+        console.log('Losing bets:', losingBets);
         
         if (totalWin > 0) {
-          updateBalance(totalWin, 'win', `Roulette win - number ${winner.number}`);
+          await updateBalance(totalWin, 'win', `Roulette win - number ${winner.number}`);
           toast({
             title: "🎉 Winner!",
-            description: `Number ${winner.number} wins! You won $${totalWin.toFixed(2)}`,
+            description: `Number ${winner.number} (${winner.color})! You won $${totalWin.toFixed(2)}`,
           });
         } else {
           toast({
             title: "House Wins",
-            description: `Number ${winner.number}. Better luck next time!`,
+            description: `Number ${winner.number} (${winner.color}). Better luck next time!`,
             variant: "destructive"
           });
         }
@@ -388,7 +417,8 @@ const RouletteWheel: React.FC = () => {
     animate();
   };
   
-  const placeBet = (betType: string, numbers: number[], payout: number, event?: React.MouseEvent) => {
+  // FIXED: Simplified bet placement with proper payout ratios
+  const placeBet = (betType: string, numbers: number[], payoutRatio: number, event?: React.MouseEvent) => {
     if (!wallet || wallet.balance < selectedChip) {
       toast({
         title: "Insufficient Balance",
@@ -412,7 +442,7 @@ const RouletteWheel: React.FC = () => {
       type: betType,
       numbers,
       amount: selectedChip,
-      payout,
+      payout: payoutRatio, // This is now just for display purposes
       position: event ? { x: event.clientX, y: event.clientY } : undefined
     };
     
@@ -493,7 +523,6 @@ const RouletteWheel: React.FC = () => {
           <Card className="casino-card">
             <CardContent className="p-8">
               <div className="relative w-full aspect-square max-w-lg mx-auto mb-8">
-                {/* Wheel Container with Professional Styling */}
                 <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-900/20 via-yellow-900/30 to-orange-900/20 shadow-2xl"></div>
                 <canvas
                   ref={wheelCanvasRef}
@@ -507,11 +536,9 @@ const RouletteWheel: React.FC = () => {
                   height="500"
                   className="absolute inset-0 w-full h-full pointer-events-none rounded-full"
                 />
-                {/* Professional Wheel Border */}
                 <div className="absolute inset-0 rounded-full border-4 border-gradient-to-r from-yellow-400 via-yellow-500 to-orange-400"></div>
               </div>
               
-              {/* Elegant Game Controls */}
               <div className="flex justify-center gap-6">
                 <Button
                   onClick={spinWheel}
@@ -542,7 +569,7 @@ const RouletteWheel: React.FC = () => {
           </Card>
         </div>
 
-        {/* Professional Betting Panel */}
+        {/* FIXED: Professional Betting Panel with Proper Layout */}
         <div className="space-y-6">
           {/* Luxury Chip Selection */}
           <Card className="casino-card">
@@ -570,41 +597,47 @@ const RouletteWheel: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* FIXED: Proper Roulette Betting Table with Individual Numbers */}
+          {/* FIXED: Traditional Roulette Betting Table */}
           <Card className="casino-card">
             <CardContent className="p-6">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center">
                 <span className="w-2 h-8 bg-gradient-to-b from-green-400 to-emerald-500 rounded-full mr-3"></span>
-                Number Betting
+                Betting Table
               </h3>
               
-              {/* Individual Number Grid (0-36) */}
-              <div className="grid grid-cols-4 gap-2 mb-4">
-                {/* Zero */}
+              {/* Zero Section */}
+              <div className="mb-4">
                 <button
                   onClick={() => placeBet('Number 0', [0], 35)}
                   disabled={isSpinning || !wallet || wallet.balance < selectedChip}
-                  className="roulette-number green hover:scale-105 transition-all"
+                  className="roulette-number green hover:scale-105 transition-all w-full py-3 mb-3"
                 >
-                  0
+                  0 (35:1)
                 </button>
-                
-                {/* Numbers 1-36 in proper roulette table layout */}
-                {Array.from({ length: 36 }, (_, i) => i + 1).map(num => (
-                  <button
-                    key={num}
-                    onClick={() => placeBet(`Number ${num}`, [num], 35)}
-                    disabled={isSpinning || !wallet || wallet.balance < selectedChip}
-                    className={`roulette-number ${getNumberColor(num)} hover:scale-105 transition-all`}
-                  >
-                    {num}
-                  </button>
-                ))}
+              </div>
+              
+              {/* Main Numbers Grid - Traditional 3-Column Layout */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {Array.from({ length: 12 }, (_, row) => 
+                  [3, 2, 1].map(col => {
+                    const num = (row * 3) + col;
+                    return (
+                      <button
+                        key={num}
+                        onClick={() => placeBet(`Number ${num}`, [num], 35)}
+                        disabled={isSpinning || !wallet || wallet.balance < selectedChip}
+                        className={`roulette-number ${getNumberColor(num)} hover:scale-105 transition-all py-2 text-sm font-bold`}
+                      >
+                        {num}
+                      </button>
+                    );
+                  })
+                ).flat()}
               </div>
             </CardContent>
           </Card>
 
-          {/* FIXED: Traditional Roulette Bets Only */}
+          {/* FIXED: Outside Bets with Correct Payouts */}
           <Card className="casino-card">
             <CardContent className="p-6">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center">
@@ -612,59 +645,84 @@ const RouletteWheel: React.FC = () => {
                 Outside Bets
               </h3>
               <div className="space-y-3">
-                {[
-                  { name: 'Red', numbers: redNumbers, payout: 2, color: 'from-red-600 to-red-700' },
-                  { name: 'Black', numbers: blackNumbers, payout: 2, color: 'from-gray-700 to-gray-800' },
-                  { name: 'Even', numbers: [2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36], payout: 2, color: 'from-gray-600 to-gray-700' },
-                  { name: 'Odd', numbers: [1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35], payout: 2, color: 'from-gray-600 to-gray-700' },
-                  { name: 'Low (1-18)', numbers: Array.from({length: 18}, (_, i) => i + 1), payout: 2, color: 'from-gray-600 to-gray-700' },
-                  { name: 'High (19-36)', numbers: Array.from({length: 18}, (_, i) => i + 19), payout: 2, color: 'from-gray-600 to-gray-700' }
-                ].map(bet => (
-                  <Button
-                    key={bet.name}
-                    onClick={() => placeBet(bet.name, bet.numbers, bet.payout)}
-                    disabled={isSpinning || !wallet || wallet.balance < selectedChip}
-                    className={`w-full bg-gradient-to-r ${bet.color} hover:scale-105 transition-all duration-200 font-semibold py-3`}
-                  >
-                    {bet.name} ({bet.payout}:1)
-                  </Button>
-                ))}
+                <Button
+                  onClick={() => placeBet('Red', redNumbers, 1)}
+                  disabled={isSpinning || !wallet || wallet.balance < selectedChip}
+                  className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:scale-105 transition-all font-semibold py-3"
+                >
+                  Red (1:1)
+                </Button>
+                <Button
+                  onClick={() => placeBet('Black', blackNumbers, 1)}
+                  disabled={isSpinning || !wallet || wallet.balance < selectedChip}
+                  className="w-full bg-gradient-to-r from-gray-700 to-gray-800 hover:scale-105 transition-all font-semibold py-3"
+                >
+                  Black (1:1)
+                </Button>
+                <Button
+                  onClick={() => placeBet('Even', [2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36], 1)}
+                  disabled={isSpinning || !wallet || wallet.balance < selectedChip}
+                  className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:scale-105 transition-all font-semibold py-3"
+                >
+                  Even (1:1)
+                </Button>
+                <Button
+                  onClick={() => placeBet('Odd', [1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35], 1)}
+                  disabled={isSpinning || !wallet || wallet.balance < selectedChip}
+                  className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:scale-105 transition-all font-semibold py-3"
+                >
+                  Odd (1:1)
+                </Button>
+                <Button
+                  onClick={() => placeBet('Low (1-18)', Array.from({length: 18}, (_, i) => i + 1), 1)}
+                  disabled={isSpinning || !wallet || wallet.balance < selectedChip}
+                  className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:scale-105 transition-all font-semibold py-3"
+                >
+                  Low 1-18 (1:1)
+                </Button>
+                <Button
+                  onClick={() => placeBet('High (19-36)', Array.from({length: 18}, (_, i) => i + 19), 1)}
+                  disabled={isSpinning || !wallet || wallet.balance < selectedChip}
+                  className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:scale-105 transition-all font-semibold py-3"
+                >
+                  High 19-36 (1:1)
+                </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Dozens and Columns */}
+          {/* FIXED: Dozens and Columns with Correct Payouts */}
           <Card className="casino-card">
             <CardContent className="p-6">
               <h3 className="text-xl font-bold text-white mb-4">Dozens & Columns</h3>
               <div className="grid grid-cols-2 gap-3">
                 <Button
-                  onClick={() => placeBet('1st Dozen', Array.from({length: 12}, (_, i) => i + 1), 3)}
+                  onClick={() => placeBet('1st Dozen', Array.from({length: 12}, (_, i) => i + 1), 2)}
                   disabled={isSpinning || !wallet || wallet.balance < selectedChip}
                   className="bg-gradient-to-r from-purple-600 to-purple-700 hover:scale-105 transition-all font-semibold"
                 >
-                  1st 12 (3:1)
+                  1st 12 (2:1)
                 </Button>
                 <Button
-                  onClick={() => placeBet('2nd Dozen', Array.from({length: 12}, (_, i) => i + 13), 3)}
+                  onClick={() => placeBet('2nd Dozen', Array.from({length: 12}, (_, i) => i + 13), 2)}
                   disabled={isSpinning || !wallet || wallet.balance < selectedChip}
                   className="bg-gradient-to-r from-purple-600 to-purple-700 hover:scale-105 transition-all font-semibold"
                 >
-                  2nd 12 (3:1)
+                  2nd 12 (2:1)
                 </Button>
                 <Button
-                  onClick={() => placeBet('3rd Dozen', Array.from({length: 12}, (_, i) => i + 25), 3)}
+                  onClick={() => placeBet('3rd Dozen', Array.from({length: 12}, (_, i) => i + 25), 2)}
                   disabled={isSpinning || !wallet || wallet.balance < selectedChip}
                   className="bg-gradient-to-r from-purple-600 to-purple-700 hover:scale-105 transition-all font-semibold"
                 >
-                  3rd 12 (3:1)
+                  3rd 12 (2:1)
                 </Button>
                 <Button
-                  onClick={() => placeBet('Column 1', [1,4,7,10,13,16,19,22,25,28,31,34], 3)}
+                  onClick={() => placeBet('Col 1', [1,4,7,10,13,16,19,22,25,28,31,34], 2)}
                   disabled={isSpinning || !wallet || wallet.balance < selectedChip}
                   className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:scale-105 transition-all font-semibold"
                 >
-                  Col 1 (3:1)
+                  Col 1 (2:1)
                 </Button>
               </div>
             </CardContent>
