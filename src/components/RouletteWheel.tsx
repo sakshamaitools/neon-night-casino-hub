@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -67,7 +66,6 @@ const RouletteWheel: React.FC = () => {
   const redNumbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
   const blackNumbers = [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35];
   
-  // Professional 3D wheel rendering
   const drawWheel = useCallback((rotation = 0) => {
     const canvas = wheelCanvasRef.current;
     if (!canvas) return;
@@ -261,7 +259,7 @@ const RouletteWheel: React.FC = () => {
     drawWheel();
   }, [drawWheel]);
   
-  // FIXED: Completely rewritten spin function with proper win detection
+  // FIXED: Make spinWheel function async to fix the await error
   const spinWheel = async () => {
     if (!wallet || wallet.balance < 1 || bets.length === 0) {
       toast({
@@ -341,75 +339,8 @@ const RouletteWheel: React.FC = () => {
           [winner.number]: (prev[winner.number] || 0) + 1
         }));
         
-        // FIXED: Completely rewritten win detection logic
-        let totalWin = 0;
-        const winningBets: string[] = [];
-        const losingBets: string[] = [];
-        
-        bets.forEach(bet => {
-          let isWinningBet = false;
-          let actualPayout = 0;
-          
-          console.log(`Checking bet: ${bet.type}, numbers: [${bet.numbers.join(', ')}], amount: $${bet.amount}`);
-          
-          // Proper win detection based on bet type
-          if (bet.type.startsWith('Number ')) {
-            // Single number bet (35:1 + original bet back)
-            isWinningBet = bet.numbers.includes(winner.number);
-            actualPayout = isWinningBet ? bet.amount * 35 + bet.amount : 0; // 35:1 + original bet
-          } else if (bet.type === 'Red') {
-            isWinningBet = redNumbers.includes(winner.number);
-            actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0; // 1:1 + original bet
-          } else if (bet.type === 'Black') {
-            isWinningBet = blackNumbers.includes(winner.number);
-            actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0; // 1:1 + original bet
-          } else if (bet.type === 'Even') {
-            isWinningBet = winner.number !== 0 && winner.number % 2 === 0;
-            actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0; // 1:1 + original bet
-          } else if (bet.type === 'Odd') {
-            isWinningBet = winner.number !== 0 && winner.number % 2 === 1;
-            actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0; // 1:1 + original bet
-          } else if (bet.type === 'Low (1-18)') {
-            isWinningBet = winner.number >= 1 && winner.number <= 18;
-            actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0; // 1:1 + original bet
-          } else if (bet.type === 'High (19-36)') {
-            isWinningBet = winner.number >= 19 && winner.number <= 36;
-            actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0; // 1:1 + original bet
-          } else if (bet.type.includes('Dozen') || bet.type.includes('Col')) {
-            // Dozens and columns (2:1 + original bet back)
-            isWinningBet = bet.numbers.includes(winner.number);
-            actualPayout = isWinningBet ? bet.amount * 2 + bet.amount : 0; // 2:1 + original bet
-          }
-          
-          console.log(`Bet result: ${isWinningBet ? 'WIN' : 'LOSE'}, payout: $${actualPayout}`);
-          
-          if (isWinningBet) {
-            totalWin += actualPayout;
-            winningBets.push(`${bet.type} ($${bet.amount} → $${actualPayout})`);
-          } else {
-            losingBets.push(`${bet.type} ($${bet.amount})`);
-          }
-        });
-        
-        console.log('=== FINAL RESULTS ===');
-        console.log('Total win amount:', totalWin);
-        console.log('Winning bets:', winningBets);
-        console.log('Losing bets:', losingBets);
-        
-        if (totalWin > 0) {
-          await updateBalance(totalWin, 'win', `Roulette win - number ${winner.number}`);
-          toast({
-            title: "🎉 Winner!",
-            description: `Number ${winner.number} (${winner.color})! You won $${totalWin.toFixed(2)}`,
-          });
-        } else {
-          toast({
-            title: "House Wins",
-            description: `Number ${winner.number} (${winner.color}). Better luck next time!`,
-            variant: "destructive"
-          });
-        }
-        
+        // Process wins/losses
+        processWinnings(winner);
         setIsSpinning(false);
       }
     };
@@ -417,7 +348,77 @@ const RouletteWheel: React.FC = () => {
     animate();
   };
   
-  // FIXED: Simplified bet placement with proper payout ratios
+  // Separate function to handle win processing
+  const processWinnings = async (winner: RouletteNumber) => {
+    let totalWin = 0;
+    const winningBets: string[] = [];
+    const losingBets: string[] = [];
+    
+    bets.forEach(bet => {
+      let isWinningBet = false;
+      let actualPayout = 0;
+      
+      console.log(`Checking bet: ${bet.type}, numbers: [${bet.numbers.join(', ')}], amount: $${bet.amount}`);
+      
+      // Proper win detection based on bet type
+      if (bet.type.startsWith('Number ')) {
+        // Single number bet (35:1 + original bet back)
+        isWinningBet = bet.numbers.includes(winner.number);
+        actualPayout = isWinningBet ? bet.amount * 35 + bet.amount : 0;
+      } else if (bet.type === 'Red') {
+        isWinningBet = redNumbers.includes(winner.number);
+        actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0;
+      } else if (bet.type === 'Black') {
+        isWinningBet = blackNumbers.includes(winner.number);
+        actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0;
+      } else if (bet.type === 'Even') {
+        isWinningBet = winner.number !== 0 && winner.number % 2 === 0;
+        actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0;
+      } else if (bet.type === 'Odd') {
+        isWinningBet = winner.number !== 0 && winner.number % 2 === 1;
+        actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0;
+      } else if (bet.type === 'Low (1-18)') {
+        isWinningBet = winner.number >= 1 && winner.number <= 18;
+        actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0;
+      } else if (bet.type === 'High (19-36)') {
+        isWinningBet = winner.number >= 19 && winner.number <= 36;
+        actualPayout = isWinningBet ? bet.amount * 1 + bet.amount : 0;
+      } else if (bet.type.includes('Dozen') || bet.type.includes('Col')) {
+        // Dozens and columns (2:1 + original bet back)
+        isWinningBet = bet.numbers.includes(winner.number);
+        actualPayout = isWinningBet ? bet.amount * 2 + bet.amount : 0;
+      }
+      
+      console.log(`Bet result: ${isWinningBet ? 'WIN' : 'LOSE'}, payout: $${actualPayout}`);
+      
+      if (isWinningBet) {
+        totalWin += actualPayout;
+        winningBets.push(`${bet.type} ($${bet.amount} → $${actualPayout})`);
+      } else {
+        losingBets.push(`${bet.type} ($${bet.amount})`);
+      }
+    });
+    
+    console.log('=== FINAL RESULTS ===');
+    console.log('Total win amount:', totalWin);
+    console.log('Winning bets:', winningBets);
+    console.log('Losing bets:', losingBets);
+    
+    if (totalWin > 0) {
+      await updateBalance(totalWin, 'win', `Roulette win - number ${winner.number}`);
+      toast({
+        title: "🎉 Winner!",
+        description: `Number ${winner.number} (${winner.color})! You won $${totalWin.toFixed(2)}`,
+      });
+    } else {
+      toast({
+        title: "House Wins",
+        description: `Number ${winner.number} (${winner.color}). Better luck next time!`,
+        variant: "destructive"
+      });
+    }
+  };
+  
   const placeBet = (betType: string, numbers: number[], payoutRatio: number, event?: React.MouseEvent) => {
     if (!wallet || wallet.balance < selectedChip) {
       toast({
@@ -442,7 +443,7 @@ const RouletteWheel: React.FC = () => {
       type: betType,
       numbers,
       amount: selectedChip,
-      payout: payoutRatio, // This is now just for display purposes
+      payout: payoutRatio,
       position: event ? { x: event.clientX, y: event.clientY } : undefined
     };
     
@@ -569,7 +570,7 @@ const RouletteWheel: React.FC = () => {
           </Card>
         </div>
 
-        {/* FIXED: Professional Betting Panel with Proper Layout */}
+        {/* Professional Betting Panel with Proper Layout */}
         <div className="space-y-6">
           {/* Luxury Chip Selection */}
           <Card className="casino-card">
@@ -597,7 +598,7 @@ const RouletteWheel: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* FIXED: Traditional Roulette Betting Table */}
+          {/* Traditional Roulette Betting Table */}
           <Card className="casino-card">
             <CardContent className="p-6">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center">
@@ -637,7 +638,7 @@ const RouletteWheel: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* FIXED: Outside Bets with Correct Payouts */}
+          {/* Outside Bets with Correct Payouts */}
           <Card className="casino-card">
             <CardContent className="p-6">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center">
@@ -691,7 +692,7 @@ const RouletteWheel: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* FIXED: Dozens and Columns with Correct Payouts */}
+          {/* Dozens and Columns with Correct Payouts */}
           <Card className="casino-card">
             <CardContent className="p-6">
               <h3 className="text-xl font-bold text-white mb-4">Dozens & Columns</h3>
